@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ধনকুবের — অনলাইন বোর্ড গেম</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3efe3;--card:#fffdf6;--ink:#1f2a22;--mut:#6b7468;--line:#cfc8b2;--g:#1f7a4d;--g2:#14573a;--warn:#c0392b;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Hind Siliguri',system-ui,sans-serif;font-size:15px;line-height:1.45}
+button{font-family:inherit;font-size:14px;cursor:pointer;border:1px solid var(--g2);background:var(--g);color:#fff;border-radius:8px;padding:7px 12px;font-weight:600}
+button:hover:not(:disabled){background:var(--g2)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.alt{background:#fff;color:var(--g2)}
+button.alt:hover:not(:disabled){background:#e9f3ec}
+button.warn{background:#fff;color:var(--warn);border-color:var(--warn)}
+button.sm{padding:3px 8px;font-size:12px;border-radius:6px}
+input,select{font-family:inherit;font-size:15px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+h1,h2,h3{margin:0}
+.top{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:var(--g2);color:#fff;gap:8px;flex-wrap:wrap}
+.top b{font-size:19px}
+.top .tag{background:rgba(255,255,255,.18);border-radius:20px;padding:2px 12px;font-size:13px}
+.wrap{display:grid;grid-template-columns:minmax(0,760px) minmax(310px,1fr);gap:12px;padding:12px;max-width:1220px;margin:0 auto}
+@media(max-width:900px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.card h3{font-size:15px;margin-bottom:6px;color:var(--g2)}
+.home{max-width:520px;margin:30px auto;padding:0 14px}
+.home .card{padding:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mut{color:var(--mut);font-size:13px}
+/* বোর্ড */
+.board{display:grid;grid-template-columns:1.5fr repeat(9,1fr) 1.5fr;grid-template-rows:1.5fr repeat(9,1fr) 1.5fr;aspect-ratio:1;width:100%;container-type:inline-size;background:#bfe0c8;border:3px solid #1a3d2b;border-radius:6px}
+.sq{position:relative;background:#fbf8ec;border:1px solid #2a5a40;display:flex;flex-direction:column;font-size:max(7px,1.6cqw);line-height:1.12;overflow:hidden;cursor:pointer;text-align:center}
+.sq .bar{height:2.6cqw;min-height:9px;display:flex;justify-content:center;align-items:center;gap:1px}
+.sq .nm{padding:1px 2px;font-weight:600;flex:1;display:flex;align-items:center;justify-content:center}
+.sq .pr{font-size:.82em;color:#444;padding-bottom:2px}
+.sq .ic{font-size:2.1em;line-height:1}
+.sq .own{position:absolute;left:0;right:0;bottom:0;height:.7cqw;min-height:3px}
+.sq.mort{background:repeating-linear-gradient(45deg,#eee,#eee 4px,#ddd 4px,#ddd 8px);opacity:.75}
+.sq.me{outline:3px solid #000;outline-offset:-3px;z-index:2}
+.hs{width:1.5cqw;height:1.5cqw;min-width:5px;min-height:5px;background:#1c8f3f;border:1px solid #0b4;display:inline-block}
+.ht{width:3cqw;height:1.5cqw;min-width:10px;min-height:5px;background:#d11;border:1px solid #700;display:inline-block}
+.tk{position:absolute;bottom:.9cqw;left:0;right:0;display:flex;justify-content:center;gap:2px;flex-wrap:wrap;z-index:3}
+.tk i{width:2.3cqw;height:2.3cqw;min-width:9px;min-height:9px;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 0 1px #000;display:block}
+.tk i.act{box-shadow:0 0 0 2px #000,0 0 6px 3px gold}
+.center{grid-area:2/2/11/11;background:linear-gradient(135deg,#e5f4e8,#d3ebd9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5cqw;padding:2cqw;text-align:center;container-type:inline-size}
+.logo{font-weight:700;font-size:7cqw;color:#14573a;letter-spacing:.5px;text-shadow:1px 1px 0 #fff}
+.dice{display:flex;gap:2cqw;font-size:14cqw;line-height:1;color:#14573a}
+.dice.roll span{animation:sh .5s}
+@keyframes sh{0%{transform:rotate(-40deg) scale(.6)}60%{transform:rotate(20deg) scale(1.2)}100%{transform:none}}
+.msg{font-size:3.2cqw;font-weight:600;background:#fff;border-radius:12px;padding:1.2cqw 3cqw;border:1px solid var(--line);max-width:92%}
+.cardbox{font-size:2.8cqw;background:#fff8d6;border:1px solid #d8c66a;border-radius:10px;padding:1.2cqw 2.4cqw;max-width:92%}
+/* প্যানেল */
+.pl{display:flex;gap:8px;align-items:flex-start;padding:6px;border-radius:8px;border:2px solid transparent}
+.pl.cur{border-color:#e0a800;background:#fff7d6}
+.pl.out{opacity:.45;text-decoration:line-through}
+.dot{width:18px;height:18px;border-radius:50%;flex:none;margin-top:3px;border:2px solid #fff;box-shadow:0 0 0 1px #000}
+.chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
+.chip{width:15px;height:15px;border-radius:3px;border:1px solid #0006;cursor:pointer;display:inline-block}
+.chip.m{opacity:.35}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.log{max-height:230px;overflow:auto;font-size:13px;display:flex;flex-direction:column-reverse}
+.log div{padding:2px 0;border-bottom:1px dotted #ddd}
+.prow{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:3px 0;border-bottom:1px dotted #ddd;font-size:14px}
+.prow .l{display:flex;align-items:center;gap:6px;min-width:0}
+.sw{width:11px;height:11px;border-radius:2px;border:1px solid #0006;flex:none}
+.modalbg{position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;z-index:50;padding:10px}
+.modal{background:var(--card);border-radius:14px;padding:14px;max-width:560px;width:100%;max-height:90vh;overflow:auto}
+.deed{border:2px solid #222;text-align:center;padding:0 0 8px;background:#fff}
+.deed .hd{padding:8px;font-weight:700;color:#000}
+.deed table{width:88%;margin:6px auto;border-collapse:collapse;text-align:left}
+.deed td{padding:1px 4px}.deed td:last-child{text-align:right}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:8px 16px;border-radius:20px;z-index:99;max-width:90%}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cols .box{border:1px solid var(--line);border-radius:8px;padding:8px}
+.cols label{display:flex;gap:6px;align-items:center;font-size:14px}
+.big{font-size:22px;font-weight:700;letter-spacing:4px;background:#fff;border:2px dashed var(--g);border-radius:10px;padding:2px 14px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal"></div>
+<div id="toast"></div>
+
+<script src="firebase-config.js"></script>
+<script id="engine">
+// ====== ধনকুবের — গেম ইঞ্জিন (pure logic) ======
+var COLORS=['#e63946','#1d7bd8','#2a9d4a','#f4a300','#8e44ad','#00a8a8'];
+var GROUPS={brown:['#8b5a3c','বাদামি'],lblue:['#8fd3f4','আকাশি'],pink:['#e66fb0','গোলাপি'],orange:['#f39a2b','কমলা'],red:['#d93636','লাল'],yellow:['#f3d52b','হলুদ'],green:['#2e9d4f','সবুজ'],dblue:['#2b4cb3','গাঢ় নীল']};
+var SQ=(function(){
+  var P=function(n,g,p,h,r){return {t:'prop',n:n,g:g,p:p,h:h,r:r};};
+  var CC={t:'cc',n:'কমিউনিটি চেস্ট'}, CH={t:'chance',n:'ভাগ্য পরীক্ষা'};
+  return [
+    {t:'go',n:'যাত্রা শুরু'},
+    P('কুড়িগ্রাম','brown',60,50,[2,10,30,90,160,250]),
+    CC,
+    P('লালমনিরহাট','brown',60,50,[4,20,60,180,320,450]),
+    {t:'tax',n:'আয়কর',amt:200},
+    {t:'station',n:'কমলাপুর স্টেশন',p:200},
+    P('বান্দরবান','lblue',100,50,[6,30,90,270,400,550]),
+    CH,
+    P('রাঙামাটি','lblue',100,50,[6,30,90,270,400,550]),
+    P('খাগড়াছড়ি','lblue',120,50,[8,40,100,300,450,600]),
+    {t:'jail',n:'জেলখানা (ভিজিট)'},
+    P('সিরাজগঞ্জ','pink',140,100,[10,50,150,450,625,750]),
+    {t:'util',n:'বিদ্যুৎ',p:150},
+    P('পাবনা','pink',140,100,[10,50,150,450,625,750]),
+    P('নাটোর','pink',160,100,[12,60,180,500,700,900]),
+    {t:'station',n:'ঈশ্বরদী জংশন',p:200},
+    P('ফরিদপুর','orange',180,100,[14,70,200,550,750,950]),
+    CC,
+    P('ময়মনসিংহ','orange',180,100,[14,70,200,550,750,950]),
+    P('টাঙ্গাইল','orange',200,100,[16,80,220,600,800,1000]),
+    {t:'park',n:'ফ্রি পার্কিং'},
+    P('কুমিল্লা','red',220,150,[18,90,250,700,875,1050]),
+    CH,
+    P('নোয়াখালী','red',220,150,[18,90,250,700,875,1050]),
+    P('ফেনী','red',240,150,[20,100,300,750,925,1100]),
+    {t:'station',n:'চট্টগ্রাম স্টেশন',p:200},
+    P('বরিশাল','yellow',260,150,[22,110,330,800,975,1150]),
+    P('পটুয়াখালী','yellow',260,150,[22,110,330,800,975,1150]),
+    {t:'util',n:'পানি',p:150},
+    P('কুয়াকাটা','yellow',280,150,[24,120,360,850,1025,1200]),
+    {t:'gojail',n:'জেলে যান'},
+    P('রংপুর','green',300,200,[26,130,390,900,1100,1275]),
+    P('দিনাজপুর','green',300,200,[26,130,390,900,1100,1275]),
+    CC,
+    P('বগুড়া','green',320,200,[28,150,450,1000,1200,1400]),
+    {t:'station',n:'সিলেট স্টেশন',p:200},
+    CH,
+    P('কক্সবাজার','dblue',350,200,[35,175,500,1100,1300,1500]),
+    {t:'tax',n:'বিলাস কর',amt:100},
+    P('ঢাকা','dblue',400,200,[50,200,600,1400,1700,2000])
+  ];
+})();
+var GM={}; SQ.forEach(function(q,i){ if(q.t==='prop'){(GM[q.g]=GM[q.g]||[]).push(i);} });
+var STATIONS=[5,15,25,35], UTILS=[12,28];
+var CHD=[
+ {k:'goto',a:0,x:'সোজা "যাত্রা শুরু" ঘরে যান। ২০০ টাকা পান।'},
+ {k:'goto',a:39,x:'ঢাকা ভ্রমণে যান। যাত্রা শুরু পার হলে ২০০ টাকা পাবেন।'},
+ {k:'goto',a:21,x:'কুমিল্লায় যান। যাত্রা শুরু পার হলে ২০০ টাকা পাবেন।'},
+ {k:'near',x:'নিকটতম রেলস্টেশনে যান। মালিক থাকলে দ্বিগুণ ভাড়া দিন।'},
+ {k:'cash',a:50,x:'ব্যাংক থেকে লভ্যাংশ ৫০ টাকা পান।'},
+ {k:'free',x:'জেল থেকে মুক্তির কার্ড। দরকার না হওয়া পর্যন্ত রেখে দিন।'},
+ {k:'back',x:'৩ ঘর পিছিয়ে যান।'},
+ {k:'jail',x:'সোজা জেলে যান। যাত্রা শুরুর বেতন পাবেন না।'},
+ {k:'cash',a:-15,x:'দ্রুত গাড়ি চালানোর জরিমানা ১৫ টাকা দিন।'},
+ {k:'goto',a:25,x:'চট্টগ্রাম স্টেশনে যান। যাত্রা শুরু পার হলে ২০০ টাকা পাবেন।'},
+ {k:'each',a:50,x:'আপনি সভাপতি নির্বাচিত! প্রত্যেক খেলোয়াড়কে ৫০ টাকা দিন।'},
+ {k:'cash',a:150,x:'পুরোনো ঋণ ফেরত এল, ১৫০ টাকা পান।'},
+ {k:'repair',h:25,H:100,x:'বাড়ি মেরামত: প্রতি বাড়ি ২৫ টাকা, প্রতি হোটেল ১০০ টাকা দিন।'}
+];
+var CCD=[
+ {k:'cash',a:200,x:'ব্যাংকের হিসাবে ভুল ছিল আপনার পক্ষে। ২০০ টাকা পান।'},
+ {k:'cash',a:-50,x:'ডাক্তারের ফি ৫০ টাকা দিন।'},
+ {k:'cash',a:50,x:'শেয়ার বিক্রি করে ৫০ টাকা পান।'},
+ {k:'free',x:'জেল থেকে মুক্তির কার্ড। দরকার না হওয়া পর্যন্ত রেখে দিন।'},
+ {k:'jail',x:'সোজা জেলে যান। যাত্রা শুরুর বেতন পাবেন না।'},
+ {k:'collect',a:10,x:'আপনার জন্মদিন! প্রত্যেক খেলোয়াড়ের কাছ থেকে ১০ টাকা নিন।'},
+ {k:'cash',a:100,x:'বীমার টাকা ১০০ পান।'},
+ {k:'cash',a:-100,x:'হাসপাতালের বিল ১০০ টাকা দিন।'},
+ {k:'cash',a:-50,x:'স্কুলের ফি ৫০ টাকা দিন।'},
+ {k:'cash',a:25,x:'পরামর্শ ফি বাবদ ২৫ টাকা পান।'},
+ {k:'goto',a:0,x:'সোজা "যাত্রা শুরু" ঘরে যান। ২০০ টাকা পান।'},
+ {k:'repair',h:40,H:115,x:'রাস্তা মেরামত: প্রতি বাড়ি ৪০ টাকা, প্রতি হোটেল ১১৫ টাকা দিন।'},
+ {k:'cash',a:20,x:'আয়কর ফেরত পেলেন, ২০ টাকা।'}
+];
+function rnd(n){return Math.floor(Math.random()*n);}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(i+1);var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function bn(n){try{return Number(n).toLocaleString('bn-BD');}catch(e){return String(n);}}
+function pl(s,i){return s.players[i];}
+function glog(s,m){s.log.push(m);if(s.log.length>80)s.log.shift();}
+function alive(s){var r=[];s.players.forEach(function(p,i){if(!p.out)r.push(i);});return r;}
+
+function newGame(list){
+  var s={v:1,players:list.map(function(p,i){return {uid:p.uid||null,name:p.name,color:COLORS[i%COLORS.length],pos:0,cash:1500,inJail:false,jt:0,fc:[],out:false};}),
+    own:{},cur:0,phase:'roll',dice:[0,0],dc:0,again:false,houses:32,hotels:12,log:[],debt:null,auction:null,trade:null,tradePrev:null,
+    ch:shuffle(CHD.map(function(_,i){return i;})),cc:shuffle(CCD.map(function(_,i){return i;})),winner:null,lastCard:null,dbl:false,rollId:0};
+  // প্রথম দান: সবাই ছক্কা চালে, সর্বোচ্চ যোগফল শুরু করে
+  var cand=s.players.map(function(_,i){return i;});
+  while(cand.length>1){
+    var rs=cand.map(function(i){return [i,rnd(6)+1+rnd(6)+1];});
+    var mx=Math.max.apply(null,rs.map(function(r){return r[1];}));
+    rs.forEach(function(r){glog(s,s.players[r[0]].name+' ছক্কা চালল: '+bn(r[1]));});
+    cand=rs.filter(function(r){return r[1]===mx;}).map(function(r){return r[0];});
+  }
+  s.cur=cand[0];
+  glog(s,'খেলা শুরু! '+s.players[s.cur].name+' প্রথম দান দেবে।');
+  return s;
+}
+
+function ownerOf(s,idx){var o=s.own[idx];return o?o.o:-1;}
+function hasMono(s,who,g){return GM[g].every(function(i){return s.own[i]&&s.own[i].o===who;});}
+function groupBuilt(s,g){return GM[g].some(function(i){return s.own[i]&&s.own[i].lvl>0;});}
+function calcRent(s,idx){
+  var q=SQ[idx],o=s.own[idx],r=0,k;
+  if(q.t==='station'){var n=STATIONS.filter(function(i){return s.own[i]&&s.own[i].o===o.o;}).length;r=25*Math.pow(2,n-1);if(s.dbl)r*=2;}
+  else if(q.t==='util'){var m=UTILS.filter(function(i){return s.own[i]&&s.own[i].o===o.o;}).length;r=(s.dice[0]+s.dice[1])*(m===2?10:4);}
+  else{ if(o.lvl>0)r=q.r[o.lvl]; else r=q.r[0]*(hasMono(s,o.o,q.g)?2:1);}
+  s.dbl=false;
+  return r;
+}
+
+function settle(s,i,amt,to,per){
+  pl(s,i).cash-=amt;
+  if(to==='bank')return;
+  if(to==='each'){alive(s).forEach(function(k){if(k!==i)pl(s,k).cash+=per;});return;}
+  pl(s,to).cash+=amt;
+}
+function pay(s,i,amt,to,reason,then,per){
+  if(amt<=0){cont(s,then);return;}
+  if(pl(s,i).cash>=amt){
+    settle(s,i,amt,to,per);
+    glog(s,pl(s,i).name+' দিল ৳'+bn(amt)+' ('+reason+')'+(to!=='bank'&&to!=='each'?' → '+pl(s,to).name:''));
+    cont(s,then);
+  }else{
+    s.debt={i:i,amt:amt,to:to,per:per||0,reason:reason,then:then||null};
+    s.phase='debt';
+    glog(s,pl(s,i).name+'-এর ৳'+bn(amt)+' দিতে হবে ('+reason+'), কিন্তু নগদ কম! সম্পত্তি বন্ধক রাখুন/বাড়ি বিক্রি করুন, নয়তো দেউলিয়া।');
+  }
+}
+function cont(s,then){ if(then&&then.move){ stepMove(s,s.cur,then.move); } }
+
+function goJail(s,i){var p=pl(s,i);p.pos=10;p.inJail=true;p.jt=0;s.again=false;s.dc=0;s.phase='post';glog(s,p.name+' জেলে গেল!');}
+function stepMove(s,i,n){var p=pl(s,i);var np=p.pos+n;if(np>=40){p.cash+=200;glog(s,p.name+' "যাত্রা শুরু" পার হয়ে ৳২০০ পেল');}p.pos=np%40;land(s,i);}
+function gotoSq(s,i,t){var p=pl(s,i);if(t<p.pos){p.cash+=200;glog(s,p.name+' "যাত্রা শুরু" পার হয়ে ৳২০০ পেল');}p.pos=t;land(s,i);}
+
+function land(s,i){
+  var p=pl(s,i),q=SQ[p.pos];s.phase='post';
+  if(q.t==='prop'||q.t==='station'||q.t==='util'){
+    var o=s.own[p.pos];
+    if(!o){s.phase='buy';glog(s,p.name+' "'+q.n+'"-এ থামল (দাম ৳'+bn(q.p)+')');s.dbl=false;return;}
+    if(o.o===i){glog(s,p.name+' নিজের "'+q.n+'"-এ থামল');s.dbl=false;return;}
+    if(o.mort){glog(s,'"'+q.n+'" বন্ধক আছে, ভাড়া লাগবে না');s.dbl=false;return;}
+    var rent=calcRent(s,p.pos);
+    glog(s,p.name+' "'+q.n+'"-এ থামল — মালিক '+pl(s,o.o).name);
+    pay(s,i,rent,o.o,'ভাড়া');return;
+  }
+  if(q.t==='tax'){glog(s,p.name+' "'+q.n+'"-এ থামল');pay(s,i,q.amt,'bank',q.n);return;}
+  if(q.t==='chance'){draw(s,i,'ch');return;}
+  if(q.t==='cc'){draw(s,i,'cc');return;}
+  if(q.t==='gojail'){goJail(s,i);return;}
+  glog(s,p.name+' "'+q.n+'"-এ থামল');
+}
+function draw(s,i,deck){
+  var p=pl(s,i),D=deck==='ch'?CHD:CCD;
+  var id=s[deck].shift(),c=D[id];
+  s.lastCard={deck:deck,text:c.x,who:p.name};
+  glog(s,p.name+' '+(deck==='ch'?'ভাগ্য পরীক্ষা':'কমিউনিটি চেস্ট')+' কার্ড তুলল: '+c.x);
+  var keep=false;
+  switch(c.k){
+    case 'cash': if(c.a>=0){p.cash+=c.a;}else pay(s,i,-c.a,'bank','কার্ড'); break;
+    case 'goto': s[deck].push(id);keep=true;gotoSq(s,i,c.a);break;
+    case 'near':{var t=STATIONS.filter(function(x){return x>p.pos;})[0];if(t===undefined)t=STATIONS[0];s.dbl=true;s[deck].push(id);keep=true;gotoSq(s,i,t);break;}
+    case 'back': s[deck].push(id);keep=true;p.pos=(p.pos+37)%40;land(s,i);break;
+    case 'jail': goJail(s,i);break;
+    case 'free': p.fc.push([deck,id]);keep=true;break;
+    case 'each':{var n=alive(s).length-1;pay(s,i,c.a*n,'each','কার্ড',null,c.a);break;}
+    case 'collect':{alive(s).forEach(function(k){if(k!==i){var t2=Math.min(pl(s,k).cash,c.a);pl(s,k).cash-=t2;p.cash+=t2;}});break;}
+    case 'repair':{var h=0,H=0;Object.keys(s.own).forEach(function(k){var o=s.own[k];if(o.o===i){if(o.lvl===5)H++;else h+=o.lvl;}});pay(s,i,h*c.h+H*c.H,'bank','মেরামত');break;}
+  }
+  if(!keep)s[deck].push(id);
+}
+function nextTurn(s){
+  var n=s.players.length;
+  do{s.cur=(s.cur+1)%n;}while(pl(s,s.cur).out);
+  s.phase='roll';s.again=false;s.dc=0;s.debt=null;
+  glog(s,'— '+pl(s,s.cur).name+'-এর দান —');
+}
+function returnBuildings(s,o){ if(o.lvl===5)s.hotels++; else s.houses+=o.lvl; o.lvl=0; }
+function liquidate(s,i,to){
+  var p=pl(s,i);
+  Object.keys(s.own).forEach(function(k){
+    var o=s.own[k];if(o.o!==i)return;
+    returnBuildings(s,o);
+    if(to==='bank'){delete s.own[k];}else{o.o=to;}
+  });
+  if(to!=='bank'){pl(s,to).cash+=p.cash;p.fc.forEach(function(f){pl(s,to).fc.push(f);});}
+  else{p.fc.forEach(function(f){s[f[0]].push(f[1]);});}
+  p.cash=0;p.fc=[];p.out=true;
+  glog(s,p.name+' দেউলিয়া হয়ে খেলা থেকে বাদ পড়ল'+(to!=='bank'?' (সম্পত্তি '+pl(s,to).name+' পেল)':' (সম্পত্তি ব্যাংকে ফিরল)'));
+  var al=alive(s);
+  if(al.length===1){s.phase='over';s.winner=al[0];s.debt=null;s.auction=null;s.trade=null;glog(s,'🏆 '+pl(s,al[0]).name+' জয়ী!');return;}
+  if(i===s.cur){s.auction=null;s.trade=null;nextTurn(s);}
+}
+function auctionAdvance(s){
+  var a=s.auction,n=s.players.length;
+  var act=alive(s).filter(function(k){return a.passed.indexOf(k)<0;});
+  if(a.hi===null&&act.length===0){glog(s,'কেউ ডাকেনি — "'+SQ[a.idx].n+'" অবিক্রীত থাকল');s.auction=null;s.phase='post';return;}
+  var t=a.turn,c=0;
+  do{t=(t+1)%n;c++;}while(c<=n&&(pl(s,t).out||a.passed.indexOf(t)>=0));
+  if(a.hi!==null&&(t===a.hi||act.length===1)){
+    var w=a.hi;pl(s,w).cash-=a.bid;s.own[a.idx]={o:w,lvl:0,mort:false};
+    glog(s,pl(s,w).name+' নিলামে "'+SQ[a.idx].n+'" পেল ৳'+bn(a.bid)+'-এ');
+    s.auction=null;s.phase='post';return;
+  }
+  a.turn=t;
+}
+
+function run(s,who,a){
+  var cur=s.cur,p=pl(s,cur),ph=s.phase,k;
+  if(ph==='over')return 'খেলা শেষ';
+  var T=a.type;
+  var mgmt=(ph==='roll'||ph==='post'||ph==='debt');
+  switch(T){
+  case 'roll':{
+    if(who!==cur||ph!=='roll'||p.inJail)return 'এখন ছক্কা চালানো যাবে না';
+    var d1=rnd(6)+1,d2=rnd(6)+1;s.dice=[d1,d2];s.rollId++;
+    var dbl=d1===d2;s.dc=dbl?s.dc+1:0;
+    glog(s,p.name+' ছক্কা চালল: '+bn(d1)+' + '+bn(d2)+' = '+bn(d1+d2)+(dbl?' (ডাবলস!)':''));
+    if(s.dc===3){glog(s,'পরপর ৩ বার ডাবলস!');goJail(s,cur);break;}
+    s.again=dbl;
+    stepMove(s,cur,d1+d2);break;}
+  case 'payJail':
+    if(who!==cur||ph!=='roll'||!p.inJail)return 'সম্ভব নয়';
+    if(p.cash<50)return 'নগদ ৫০ টাকা নেই';
+    p.cash-=50;p.inJail=false;p.jt=0;glog(s,p.name+' ৫০ টাকা জরিমানা দিয়ে জেল থেকে বের হল');break;
+  case 'useCard':
+    if(who!==cur||ph!=='roll'||!p.inJail||!p.fc.length)return 'সম্ভব নয়';
+    var f=p.fc.pop();s[f[0]].push(f[1]);p.inJail=false;p.jt=0;glog(s,p.name+' মুক্তির কার্ড ব্যবহার করল');break;
+  case 'jailRoll':{
+    if(who!==cur||ph!=='roll'||!p.inJail)return 'সম্ভব নয়';
+    var e1=rnd(6)+1,e2=rnd(6)+1;s.dice=[e1,e2];s.rollId++;
+    glog(s,p.name+' জেল থেকে বেরোতে ছক্কা চালল: '+bn(e1)+' + '+bn(e2));
+    if(e1===e2){p.inJail=false;p.jt=0;s.again=false;glog(s,'ডাবলস! মুক্তি');stepMove(s,cur,e1+e2);}
+    else{p.jt++;
+      if(p.jt>=3){p.inJail=false;p.jt=0;s.again=false;glog(s,'৩ বারেও ডাবলস পড়েনি, ৫০ টাকা দিয়ে বের হতেই হবে');pay(s,cur,50,'bank','জেল জরিমানা',{move:e1+e2});}
+      else{s.again=false;s.phase='post';glog(s,'ডাবলস পড়েনি');}
+    }
+    break;}
+  case 'buy':{
+    if(who!==cur||ph!=='buy')return 'সম্ভব নয়';
+    var q=SQ[p.pos];if(p.cash<q.p)return 'নগদ কম';
+    p.cash-=q.p;s.own[p.pos]={o:cur,lvl:0,mort:false};s.phase='post';glog(s,p.name+' "'+q.n+'" কিনল ৳'+bn(q.p)+'-এ');break;}
+  case 'auction':{
+    if(who!==cur||ph!=='buy')return 'সম্ভব নয়';
+    s.auction={idx:p.pos,bid:0,hi:null,turn:cur,passed:[]};s.phase='auction';
+    glog(s,'"'+SQ[p.pos].n+'" নিলামে উঠল!');
+    auctionAdvance2(s);break;}
+  case 'bid':{
+    if(ph!=='auction'||!s.auction||who!==s.auction.turn)return 'এখন আপনার ডাকার পালা নয়';
+    var amt=Math.floor(Number(a.amt));
+    if(!(amt>s.auction.bid))return 'ডাক আগের চেয়ে বেশি হতে হবে';
+    if(amt>pl(s,who).cash)return 'নগদ টাকার বেশি ডাকা যাবে না';
+    s.auction.bid=amt;s.auction.hi=who;glog(s,pl(s,who).name+' ডাকল ৳'+bn(amt));
+    auctionAdvance(s);break;}
+  case 'pass':{
+    if(ph!=='auction'||!s.auction||who!==s.auction.turn)return 'এখন আপনার পালা নয়';
+    s.auction.passed.push(who);glog(s,pl(s,who).name+' পাস করল');
+    auctionAdvance(s);break;}
+  case 'endTurn':
+    if(who!==cur||ph!=='post')return 'এখন দান শেষ করা যাবে না';
+    if(s.again&&!p.inJail){s.phase='roll';glog(s,p.name+' ডাবলস পেয়েছে, আবার ছক্কা চালবে');}
+    else nextTurn(s);
+    break;
+  case 'payDebt':{
+    var d=s.debt;
+    if(ph!=='debt'||!d||who!==d.i)return 'সম্ভব নয়';
+    if(pl(s,d.i).cash<d.amt)return 'এখনও নগদ কম';
+    settle(s,d.i,d.amt,d.to,d.per);glog(s,pl(s,d.i).name+' দেনা শোধ করল ৳'+bn(d.amt));
+    s.debt=null;s.phase='post';cont(s,d.then);break;}
+  case 'retire':{
+    if(who!==cur||!mgmt)return 'সম্ভব নয়';
+    var cr='bank';if(ph==='debt'&&s.debt&&typeof s.debt.to==='number')cr=s.debt.to;
+    liquidate(s,cur,cr);break;}
+  case 'kick':{
+    var ki=a.i;if(typeof ki!=='number'||!pl(s,ki)||pl(s,ki).out)return 'সম্ভব নয়';
+    s.auction=null;
+    if(s.phase==='trade'){s.trade=null;s.phase=s.tradePrev||'post';}
+    if(s.phase==='auction'){s.phase='post';}
+    var wasCur=ki===s.cur;
+    liquidate(s,ki,'bank');
+    if(!wasCur&&s.phase==='debt'&&s.debt&&s.debt.i===ki){s.debt=null;}
+    break;}
+  case 'build':{
+    if(who!==cur||(ph!=='roll'&&ph!=='post'))return 'এখন বাড়ি বানানো যাবে না';
+    var bq=SQ[a.idx],bo=s.own[a.idx];
+    if(!bq||bq.t!=='prop'||!bo||bo.o!==cur)return 'এটি আপনার জায়গা নয়';
+    if(!hasMono(s,cur,bq.g))return 'পুরো রঙের মনোপলি দরকার';
+    if(GM[bq.g].some(function(i){return s.own[i].mort;}))return 'গ্রুপে বন্ধক থাকলে বানানো যাবে না';
+    if(bo.lvl>=5)return 'ইতিমধ্যে হোটেল আছে';
+    var mn=Math.min.apply(null,GM[bq.g].map(function(i){return s.own[i].lvl;}));
+    if(bo.lvl>mn)return 'সমানভাবে বানাতে হবে (আগে বাকি জায়গায় বানান)';
+    if(p.cash<bq.h)return 'নগদ কম';
+    if(bo.lvl===4){if(s.hotels<1)return 'ব্যাংকে হোটেল নেই';s.hotels--;s.houses+=4;}
+    else{if(s.houses<1)return 'ব্যাংকে বাড়ি নেই';s.houses--;}
+    p.cash-=bq.h;bo.lvl++;glog(s,p.name+' "'+bq.n+'"-এ '+(bo.lvl===5?'হোটেল':'বাড়ি')+' বানাল');break;}
+  case 'sell':{
+    if(who!==cur||!mgmt)return 'সম্ভব নয়';
+    var sq=SQ[a.idx],so=s.own[a.idx];
+    if(!sq||sq.t!=='prop'||!so||so.o!==cur||so.lvl<1)return 'বিক্রি করার মতো কিছু নেই';
+    var mx=Math.max.apply(null,GM[sq.g].map(function(i){return s.own[i].lvl;}));
+    if(so.lvl<mx)return 'সবচেয়ে বেশি বাড়িওয়ালা জায়গা থেকে আগে বিক্রি করুন';
+    if(so.lvl===5){if(s.houses<4)return 'ব্যাংকে ৪টি বাড়ি নেই (হোটেল ভাঙা যাবে না)';s.houses-=4;s.hotels++;}
+    else s.houses++;
+    so.lvl--;p.cash+=sq.h/2;glog(s,p.name+' "'+sq.n+'" থেকে অর্ধেক দামে ব্যাংকে বিক্রি করল');break;}
+  case 'mortgage':{
+    if(who!==cur||!mgmt)return 'সম্ভব নয়';
+    var mq=SQ[a.idx],mo=s.own[a.idx];
+    if(!mq||!mo||mo.o!==cur||mo.mort)return 'সম্ভব নয়';
+    if(mq.t==='prop'&&groupBuilt(s,mq.g))return 'আগে এই গ্রুপের সব বাড়ি/হোটেল বিক্রি করুন';
+    mo.mort=true;p.cash+=mq.p/2;glog(s,p.name+' "'+mq.n+'" বন্ধক রাখল (৳'+bn(mq.p/2)+')');break;}
+  case 'unmortgage':{
+    if(who!==cur||!mgmt)return 'সম্ভব নয়';
+    var uq=SQ[a.idx],uo=s.own[a.idx];
+    if(!uq||!uo||uo.o!==cur||!uo.mort)return 'সম্ভব নয়';
+    var cost=Math.ceil(uq.p/2*1.1);if(p.cash<cost)return 'নগদ কম (দরকার ৳'+bn(cost)+')';
+    p.cash-=cost;uo.mort=false;glog(s,p.name+' "'+uq.n+'" মুক্ত করল (৳'+bn(cost)+')');break;}
+  case 'propose':{
+    if(who!==cur||(ph!=='roll'&&ph!=='post'))return 'এখন প্রস্তাব দেওয়া যাবে না';
+    var tr={from:cur,to:a.to,oc:Math.max(0,Math.floor(a.oc||0)),rc:Math.max(0,Math.floor(a.rc||0)),op:(a.op||[]).map(Number),rp:(a.rp||[]).map(Number)};
+    var er=checkTrade(s,tr);if(er)return er;
+    s.trade=tr;s.tradePrev=ph;s.phase='trade';glog(s,p.name+' '+pl(s,tr.to).name+'-কে বিনিময়ের প্রস্তাব দিল');break;}
+  case 'accept':{
+    if(ph!=='trade'||!s.trade||who!==s.trade.to)return 'সম্ভব নয়';
+    var t=s.trade,er2=checkTrade(s,t);if(er2)return er2;
+    pl(s,t.from).cash+=t.rc-t.oc;pl(s,t.to).cash+=t.oc-t.rc;
+    t.op.forEach(function(i){s.own[i].o=t.to;});t.rp.forEach(function(i){s.own[i].o=t.from;});
+    glog(s,pl(s,t.to).name+' প্রস্তাব মেনে নিল — বিনিময় সম্পন্ন');
+    s.phase=s.tradePrev||'post';s.trade=null;break;}
+  case 'decline':{
+    if(ph!=='trade'||!s.trade||(who!==s.trade.to&&who!==s.trade.from))return 'সম্ভব নয়';
+    glog(s,who===s.trade.to?pl(s,who).name+' প্রস্তাব ফিরিয়ে দিল':pl(s,who).name+' প্রস্তাব বাতিল করল');
+    s.phase=s.tradePrev||'post';s.trade=null;break;}
+  default: return 'অজানা কাজ';
+  }
+}
+function auctionAdvance2(s){
+  // নিলাম শুরু: যার দান তার পরের জন থেকে
+  var a=s.auction,n=s.players.length,t=a.turn;
+  do{t=(t+1)%n;}while(pl(s,t).out);
+  a.turn=t;
+}
+function checkTrade(s,t){
+  var f=pl(s,t.from),o=pl(s,t.to);
+  if(!o||o.out||t.to===t.from)return 'ভুল খেলোয়াড়';
+  if(t.oc>f.cash)return 'আপনার নগদ কম';
+  if(t.rc>o.cash)return o.name+'-এর নগদ কম';
+  if(!t.oc&&!t.rc&&!t.op.length&&!t.rp.length)return 'কিছু তো দিন!';
+  var bad=null;
+  t.op.forEach(function(i){var x=s.own[i];if(!x||x.o!==t.from)bad='আপনার নয় এমন জায়গা';else if(SQ[i].t==='prop'&&groupBuilt(s,SQ[i].g))bad='বাড়ি/হোটেল থাকা গ্রুপের জায়গা বিনিময় করা যায় না';});
+  t.rp.forEach(function(i){var x=s.own[i];if(!x||x.o!==t.to)bad='তার নয় এমন জায়গা';else if(SQ[i].t==='prop'&&groupBuilt(s,SQ[i].g))bad='বাড়ি/হোটেল থাকা গ্রুপের জায়গা বিনিময় করা যায় না';});
+  return bad;
+}
+function apply(s0,who,a){
+  var s=JSON.parse(JSON.stringify(s0)),err;
+  try{err=run(s,who,a);}catch(e){return {err:'ত্রুটি: '+e};}
+  if(err)return {err:err};
+  s.v=(s0.v||0)+1;
+  return {s:s};
+}
+function whoFor(s,a){
+  var T=a.type;
+  if(T==='bid'||T==='pass')return s.auction?s.auction.turn:s.cur;
+  if(T==='accept')return s.trade?s.trade.to:s.cur;
+  if(T==='decline')return s.trade?s.trade.to:s.cur;
+  if(T==='payDebt'&&s.debt)return s.debt.i;
+  return s.cur;
+}
+
+</script>
+
+<script>
+(function(){
+'use strict';
+var app=document.getElementById('app'),modalEl=document.getElementById('modal');
+var S=null;                 // বর্তমান গেম স্টেট
+var MODE=null;              // 'local' | 'online'
+var DB=null,USER=null,UID=null,CODE=null,HOST=null,UNSUBS=[],WRITE=Promise.resolve();
+var lobbyPlayers=[],started=false,screen='home',NAME='',loading=false,dbMsg='',canWrite=true;
+var bidVal='',tradeDraft=null,lastRoll=0;
+
+function esc(x){return String(x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function toast(m){var t=document.getElementById('toast');t.innerHTML='<div class="toast">'+esc(m)+'</div>';clearTimeout(toast.t);toast.t=setTimeout(function(){t.innerHTML='';},3200);}
+function lsGet(k){try{return localStorage.getItem(k)||'';}catch(e){return '';}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function money(n){return '৳'+bn(n);}
+
+// ---------- নেটওয়ার্ক ----------
+function myIdx(){ if(!S||!UID)return -1; return S.players.findIndex(function(p){return p.uid===UID;}); }
+function isMe(i){ if(MODE==='local')return true; return i===myIdx(); }
+function unsubAll(){UNSUBS.forEach(function(f){try{f();}catch(e){}});UNSUBS=[];}
+
+function push(){
+  if(MODE!=='online')return;
+  var snap=JSON.stringify(S),v=S.v;
+  WRITE=WRITE.then(function(){return DB.doc('games/'+CODE).update({s:snap,v:v});}).catch(function(e){
+    if(e&&(e.code==='permission-denied'||e.code==='invalid_argument')){toast('লেখার অনুমতি নেই — Firestore rules ঠিকমতো publish করা হয়েছে কি দেখুন।');}
+    else toast('সংযোগে সমস্যা, আবার চেষ্টা করুন।');
+  });
+}
+function dispatch(a){
+  if(!S)return;
+  var who=MODE==='local'?whoFor(S,a):myIdx();
+  var r=apply(S,who,a);
+  if(r.err){toast(r.err);return;}
+  S=r.s;bidVal='';
+  render();push();
+}
+window.A=function(type,extra){var a={type:type};if(extra)for(var k in extra)a[k]=extra[k];dispatch(a);};
+
+function startLocal(names){
+  MODE='local';S=newGame(names.map(function(n){return {name:n};}));screen='game';render();
+}
+async function initNet(){
+  var cfg=window.FIREBASE_CONFIG;
+  if(!cfg||!cfg.apiKey||/YOUR_/.test(cfg.apiKey)){dbMsg='অনলাইন মোডের জন্য firebase-config.js ফাইলে আপনার Firebase কনফিগ বসান (README দেখুন)। আপাতত একই ডিভাইসে খেলতে পারেন।';render();return;}
+  try{
+    var V='10.14.1',B='https://www.gstatic.com/firebasejs/'+V+'/';
+    var appM=await import(B+'firebase-app.js'),authM=await import(B+'firebase-auth.js'),fsM=await import(B+'firebase-firestore.js');
+    var app=appM.initializeApp(cfg),auth=authM.getAuth(app),fs=fsM.getFirestore(app);
+    var cred=await authM.signInAnonymously(auth);
+    UID=cred.user.uid;
+    var snapOf=function(s){return {exists:s.exists(),data:function(){return s.data();}};};
+    DB={
+      doc:function(path){var ref=fsM.doc(fs,path);return {
+        get:async function(){return snapOf(await fsM.getDoc(ref));},
+        set:function(d){return fsM.setDoc(ref,d);},
+        update:function(d){return fsM.updateDoc(ref,d);},
+        onSnapshot:function(n,e){return fsM.onSnapshot(ref,function(s){n(snapOf(s));},e);}};},
+      collection:function(path){var c=fsM.collection(fs,path);return {orderBy:function(f){return {onSnapshot:function(n,e){return fsM.onSnapshot(fsM.query(c,fsM.orderBy(f)),function(s){n({docs:s.docs.map(function(d){return {data:function(){return d.data();}};})});},e);}};}};}
+    };
+  }catch(e){console.error(e);DB=null;dbMsg='Firebase সংযোগ হয়নি ('+(e&&e.code?e.code:'নেটওয়ার্ক/কনফিগ')+')। Authentication-এ Anonymous চালু আছে কি এবং কনফিগ ঠিক আছে কি দেখুন। আপাতত একই ডিভাইসে খেলতে পারেন।';}
+  render();
+}
+function genCode(){var c='ABCDEFGHJKMNPQRSTUVWXYZ23456789',r='';for(var i=0;i<4;i++)r+=c[Math.floor(Math.random()*c.length)];return r;}
+
+async function createRoom(){
+  if(!DB||!UID)return;
+  NAME=(document.getElementById('nm').value||'').trim()||'খেলোয়াড়';lsSet('dk_name',NAME);
+  var code=genCode();
+  try{
+    await DB.doc('games/'+code).set({host:UID,started:false,created:Date.now()});
+    await DB.doc('games/'+code+'/players/'+UID).set({name:NAME,t:Date.now(),uid:UID});
+  }catch(e){toast('ঘর বানানো যায়নি — Firestore rules/সংযোগ পরীক্ষা করুন।');return;}
+  enterRoom(code);
+}
+async function joinRoom(code){
+  if(!DB||!UID)return;
+  code=(code||'').trim().toUpperCase();
+  NAME=(document.getElementById('nm').value||'').trim()||NAME||'খেলোয়াড়';lsSet('dk_name',NAME);
+  if(code.length<3){toast('ঘরের কোড দিন');return;}
+  var snap;try{snap=await DB.doc('games/'+code).get();}catch(e){toast('সংযোগে সমস্যা');return;}
+  if(!snap.exists){toast('এই কোডে কোনো ঘর পাওয়া যায়নি');return;}
+  var d=snap.data();
+  if(!d.started){
+    try{await DB.doc('games/'+code+'/players/'+UID).set({name:NAME,t:Date.now(),uid:UID});}
+    catch(e){toast('যোগ দেওয়া যায়নি — Firestore rules/সংযোগ পরীক্ষা করুন।');return;}
+  }
+  enterRoom(code);
+}
+function enterRoom(code){
+  MODE='online';CODE=code;lsSet('dk_code',code);unsubAll();started=false;S=null;screen='lobby';render();
+  var tm=setTimeout(function(){toast('সংযোগ ধীর — অপেক্ষা করুন…');},10000);
+  UNSUBS.push(DB.doc('games/'+code).onSnapshot(function(snap){
+    clearTimeout(tm);
+    if(!snap.exists)return;
+    var d=snap.data();HOST=d.host;
+    if(d.started&&d.s){
+      var ns;try{ns=JSON.parse(d.s);}catch(e){return;}
+      if(!S||ns.v>S.v){S=ns;started=true;screen='game';render();}
+    }else{render();}
+  },function(e){toast('ঘরের সঙ্গে সংযোগ কেটে গেছে');}));
+  UNSUBS.push(DB.collection('games/'+code+'/players').orderBy('t').onSnapshot(function(snap){
+    lobbyPlayers=snap.docs.map(function(d){return d.data();});
+    if(screen==='lobby')render();
+  },function(){}));
+}
+async function startOnline(){
+  if(HOST!==UID)return;
+  var list=lobbyPlayers.slice(0,6).map(function(p){return {uid:p.uid,name:p.name};});
+  if(list.length<2){toast('কমপক্ষে ২ জন লাগবে');return;}
+  var s=newGame(list);
+  S=s;started=true;screen='game';render();
+  try{await DB.doc('games/'+CODE).update({started:true,s:JSON.stringify(s),v:s.v,uids:list.map(function(p){return p.uid;})});}catch(e){toast('শুরু করা যায়নি');}
+}
+function leaveRoom(){unsubAll();S=null;MODE=null;CODE=null;started=false;screen='home';lobbyPlayers=[];render();}
+
+// ---------- রেন্ডার ----------
+function render(){
+  if(screen==='home')return renderHome();
+  if(screen==='lobby')return renderLobby();
+  renderGame();
+  if(tradeDraft)renderTradeModal();
+}
+function renderHome(){
+  var saved=lsGet('dk_code');
+  app.innerHTML='<div class="home"><div class="card"><h1 style="font-size:30px;color:#14573a">🎲 ধনকুবের</h1>'+
+  '<p class="mut">জায়গা কিনুন, ভাড়া আদায় করুন, বাড়ি-হোটেল বানান — শেষ পর্যন্ত যে টিকে থাকবে সে-ই জয়ী!</p>'+
+  '<div class="row" style="margin:10px 0"><input id="nm" placeholder="আপনার নাম" value="'+esc(NAME||lsGet('dk_name'))+'" style="flex:1"></div>'+
+  (DB&&UID?'<h3>অনলাইন (প্রত্যেকে নিজের ডিভাইসে)</h3><div class="row" style="margin:8px 0"><button onclick="G.create()">নতুন ঘর বানান</button></div>'+
+   '<div class="row"><input id="cd" placeholder="ঘরের কোড" maxlength="6" style="width:120px;text-transform:uppercase"><button class="alt" onclick="G.join()">যোগ দিন</button>'+
+   (saved?'<button class="alt" onclick="G.rejoin()">আগের ঘরে ফিরুন ('+esc(saved)+')</button>':'')+'</div>'+
+   ''
+   :'<p class="mut">'+esc(dbMsg||'অনলাইন সংযোগ প্রস্তুত হচ্ছে…')+'</p>')+
+  '<hr style="border:0;border-top:1px solid var(--line);margin:14px 0"><h3>একই ডিভাইসে (পালা করে)</h3>'+
+  '<div id="locnames" class="row" style="margin:8px 0"></div>'+
+  '<div class="row"><select id="lc" onchange="G.locRender()"><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select><span>জন খেলোয়াড়</span><button class="alt" onclick="G.local()">খেলা শুরু</button></div>'+
+  '<p class="mut" style="margin-top:14px">অনলাইনে খেলতে: একজন ঘর বানিয়ে কোডটি বন্ধুদের পাঠান; সবাই এই সাইট খুলে কোড দিয়ে যোগ দিন।</p></div></div>';
+  G.locRender();
+}
+function renderLobby(){
+  var host=HOST===UID;
+  app.innerHTML=top()+'<div class="home"><div class="card"><h2>ঘর <span class="big">'+esc(CODE)+'</span></h2>'+
+  '<p class="mut">এই কোডটি বন্ধুদের দিন। তারা একই পেজ খুলে "যোগ দিন" চাপবে।</p><h3 style="margin-top:10px">খেলোয়াড় ('+lobbyPlayers.length+'/৬)</h3>'+
+  lobbyPlayers.map(function(p,i){return '<div class="pl"><span class="dot" style="background:'+COLORS[i%6]+'"></span><b>'+esc(p.name)+'</b>'+(p.uid===HOST?' <span class="mut">(হোস্ট)</span>':'')+(p.uid===UID?' <span class="mut">(আপনি)</span>':'')+'</div>';}).join('')+
+  '<div class="acts">'+(host?'<button onclick="G.start()" '+(lobbyPlayers.length<2?'disabled':'')+'>খেলা শুরু করুন</button>':'<span class="mut">হোস্ট খেলা শুরু করার অপেক্ষায়…</span>')+'<button class="alt" onclick="G.leave()">বের হন</button></div></div></div>';
+}
+function top(){
+  return '<div class="top"><b>🎲 ধনকুবের</b><span>'+(MODE==='online'?'<span class="tag">ঘর: '+esc(CODE)+'</span> ':'<span class="tag">একই ডিভাইস</span> ')+
+  '<button class="sm alt" onclick="G.leave()">মেনু</button></span></div>';
+}
+function sqHTML(i){
+  var q=SQ[i],o=S.own[i],cls='sq'+(o&&o.mort?' mort':'');
+  var r,c;
+  if(i===0){r=11;c=11;}else if(i<10){r=11;c=11-i;}else if(i===10){r=11;c=1;}else if(i<20){r=11-(i-10);c=1;}else if(i===20){r=1;c=1;}else if(i<30){r=1;c=1+(i-20);}else if(i===30){r=1;c=11;}else{r=1+(i-30);c=11;}
+  var inner='';
+  if(q.t==='prop'){
+    var lv=o?o.lvl:0,bar='';
+    if(lv===5)bar='<span class="ht"></span>';else for(var h=0;h<lv;h++)bar+='<span class="hs"></span>';
+    inner='<div class="bar" style="background:'+GROUPS[q.g][0]+'">'+bar+'</div><div class="nm">'+esc(q.n)+'</div><div class="pr">'+money(q.p)+'</div>';
+  }else{
+    var ic={go:'➡️',chance:'❓',cc:'📦',tax:'💸',jail:'🔒',park:'🅿️',gojail:'🚔',station:'🚂',util:q.n==='বিদ্যুৎ'?'💡':'🚰'}[q.t];
+    inner='<div class="ic">'+ic+'</div><div class="nm">'+esc(q.n)+'</div>'+(q.p?'<div class="pr">'+money(q.p)+'</div>':(q.amt?'<div class="pr">'+money(q.amt)+'</div>':''));
+  }
+  if(o)inner+='<div class="own" style="background:'+S.players[o.o].color+'"></div>';
+  var toks='';S.players.forEach(function(p,k){if(!p.out&&p.pos===i)toks+='<i class="'+(k===S.cur?'act':'')+'" style="background:'+p.color+'" title="'+esc(p.name)+'"></i>';});
+  if(toks)inner+='<div class="tk">'+toks+'</div>';
+  return '<div class="'+cls+'" style="grid-area:'+r+'/'+c+'" onclick="G.deed('+i+')">'+inner+'</div>';
+}
+function phaseMsg(){
+  var p=S.players[S.cur];
+  switch(S.phase){
+    case 'roll':return p.inJail?p.name+' জেলে আছে — কীভাবে বের হবে?':p.name+'-এর দান: ছক্কা চালুন';
+    case 'buy':return p.name+' "'+SQ[p.pos].n+'"-এ — কিনবে?';
+    case 'auction':return 'নিলাম: "'+SQ[S.auction.idx].n+'" — এখন '+S.players[S.auction.turn].name+'-এর ডাকার পালা';
+    case 'debt':return p.name+'-কে ৳'+bn(S.debt.amt)+' দিতে হবে — টাকা জোগাড় করুন!';
+    case 'post':return p.name+(S.again?': ডাবলস! আবার দান পাবে':': দান শেষ করতে পারে');
+    case 'trade':return S.players[S.trade.from].name+' → '+S.players[S.trade.to].name+': বিনিময়ের প্রস্তাব';
+    case 'over':return '🏆 '+S.players[S.winner].name+' জয়ী!';
+  }return '';
+}
+function renderGame(){
+  var cells='';for(var i=0;i<40;i++)cells+=sqHTML(i);
+  var face='⚀⚁⚂⚃⚄⚅';
+  var rolled=S.rollId!==lastRoll;lastRoll=S.rollId;
+  var center='<div class="center"><div class="logo">ধনকুবের</div>'+
+    (S.dice[0]?'<div class="dice'+(rolled?' roll':'')+'"><span>'+face[S.dice[0]-1]+'</span><span>'+face[S.dice[1]-1]+'</span></div>':'<div class="dice" style="opacity:.25"><span>⚀</span><span>⚁</span></div>')+
+    '<div class="msg">'+esc(phaseMsg())+'</div>'+
+    (S.lastCard?'<div class="cardbox">'+(S.lastCard.deck==='ch'?'❓ ভাগ্য পরীক্ষা':'📦 কমিউনিটি চেস্ট')+': '+esc(S.lastCard.text)+'</div>':'')+'</div>';
+  app.innerHTML=top()+'<div class="wrap"><div><div class="board">'+cells+center+'</div></div><div>'+panel()+'</div></div>';
+}
+function viewer(){return MODE==='local'?S.cur:myIdx();}
+function panel(){
+  var h='';
+  // খেলোয়াড় তালিকা
+  h+='<div class="card"><h3>খেলোয়াড়</h3>';
+  S.players.forEach(function(p,i){
+    var chips='';Object.keys(S.own).map(Number).sort(function(a,b){return a-b;}).forEach(function(k){var o=S.own[k];if(o.o===i){var q=SQ[k];var col=q.t==='prop'?GROUPS[q.g][0]:(q.t==='station'?'#444':'#ccc');chips+='<span class="chip'+(o.mort?' m':'')+'" style="background:'+col+'" title="'+esc(q.n)+'" onclick="G.deed('+k+')"></span>';}});
+    h+='<div class="pl'+(i===S.cur&&S.phase!=='over'?' cur':'')+(p.out?' out':'')+'"><span class="dot" style="background:'+p.color+'"></span><div style="flex:1"><b>'+esc(p.name)+'</b>'+(MODE==='online'&&p.uid===UID?' <span class="mut">(আপনি)</span>':'')+(p.inJail?' 🔒':'')+(p.fc.length?' 🎫×'+p.fc.length:'')+
+      '<div>'+money(p.cash)+'</div><div class="chips">'+chips+'</div></div>'+
+      (MODE==='online'&&HOST===UID&&!p.out&&i!==myIdx()&&S.phase!=='over'?'<button class="sm warn" onclick="G.kick('+i+')" title="অনুপস্থিত/আটকে থাকা খেলোয়াড়কে বাদ দিন">বাদ</button>':'')+'</div>';
+  });
+  h+='</div>';
+  h+=actionCard();
+  h+=propsCard();
+  h+='<div class="card"><h3>খেলার লগ</h3><div class="log">'+S.log.slice(-30).reverse().map(function(l){return '<div>'+esc(l)+'</div>';}).join('')+'</div>'+
+     '<div class="mut" style="margin-top:6px">ব্যাংকে বাড়ি: '+bn(S.houses)+' • হোটেল: '+bn(S.hotels)+'</div></div>';
+  return h;
+}
+function actionCard(){
+  var s=S,cur=s.cur,p=s.players[cur],h='<div class="card"><h3>আপনার কাজ</h3>',mine=isMe(cur);
+  var spectator=MODE==='online'&&myIdx()<0;
+  if(spectator)return h+'<div class="mut">আপনি দর্শক।</div></div>';
+  if(s.phase==='over'){return h+'<b>🏆 '+esc(s.players[s.winner].name)+' জয়ী! অভিনন্দন!</b><div class="acts"><button onclick="G.leave()">মেনুতে ফিরুন</button></div></div>';}
+  if(s.phase==='roll'){
+    if(!mine)h+='<div class="mut">'+esc(p.name)+'-এর দানের অপেক্ষা…</div>';
+    else if(p.inJail)h+='<div class="acts"><button onclick="A(\'jailRoll\')">🎲 ডাবলসের চেষ্টা (ছক্কা)</button><button class="alt" onclick="A(\'payJail\')" '+(p.cash<50?'disabled':'')+'>৫০ টাকা দিয়ে বের হন</button>'+(p.fc.length?'<button class="alt" onclick="A(\'useCard\')">🎫 মুক্তির কার্ড</button>':'')+'</div><div class="mut">চেষ্টা '+bn(p.jt)+'/৩</div>';
+    else h+='<div class="acts"><button onclick="A(\'roll\')">🎲 ছক্কা চালুন</button></div>';
+  }else if(s.phase==='buy'){
+    var q=SQ[p.pos];
+    if(!mine)h+='<div class="mut">'+esc(p.name)+' সিদ্ধান্ত নিচ্ছে…</div>';
+    else h+='<div><b>'+esc(q.n)+'</b> — দাম '+money(q.p)+'</div><div class="acts"><button onclick="A(\'buy\')" '+(p.cash<q.p?'disabled':'')+'>কিনুন</button><button class="alt" onclick="A(\'auction\')">নিলামে তুলুন</button></div>';
+  }else if(s.phase==='auction'){
+    var a=s.auction,t=s.players[a.turn];
+    h+='<div><b>'+esc(SQ[a.idx].n)+'</b> — সর্বোচ্চ ডাক: '+(a.hi===null?'নেই':money(a.bid)+' ('+esc(s.players[a.hi].name)+')')+'</div>';
+    if(isMe(a.turn)){
+      var base=a.bid;
+      h+='<div class="mut" style="margin:4px 0">'+esc(t.name)+', আপনার নগদ '+money(t.cash)+'</div><div class="acts">'+
+      [10,50,100].map(function(d){return '<button class="alt sm" onclick="G.bidQuick('+(base+d)+')">'+money(base+d)+'</button>';}).join('')+
+      '<input id="bid" type="number" min="'+(base+1)+'" style="width:100px" placeholder="অন্য অঙ্ক" value="'+esc(bidVal)+'" oninput="G.bidIn(this.value)"><button onclick="G.bid()">ডাকুন</button><button class="warn" onclick="A(\'pass\')">পাস</button></div>';
+    }else h+='<div class="mut">'+esc(t.name)+'-এর অপেক্ষা…</div>';
+  }else if(s.phase==='debt'){
+    var d=s.debt;
+    h+='<div style="color:var(--warn)"><b>'+esc(s.players[d.i].name)+'</b>-কে '+money(d.amt)+' দিতে হবে ('+esc(d.reason)+')। নগদ আছে '+money(s.players[d.i].cash)+'।</div>';
+    if(isMe(d.i))h+='<div class="mut">নিচের তালিকা থেকে সম্পত্তি বন্ধক রাখুন বা বাড়ি বিক্রি করুন।</div><div class="acts"><button onclick="A(\'payDebt\')" '+(s.players[d.i].cash<d.amt?'disabled':'')+'>দেনা শোধ করুন</button><button class="warn" onclick="G.retire()">দেউলিয়া ঘোষণা</button></div>';
+  }else if(s.phase==='post'){
+    if(!mine)h+='<div class="mut">'+esc(p.name)+' খেলছে…</div>';
+    else h+='<div class="acts"><button onclick="A(\'endTurn\')">'+(s.again&&!p.inJail?'🎲 আবার ছক্কা (ডাবলস)':'দান শেষ করুন')+'</button></div>';
+  }else if(s.phase==='trade'){
+    var t=s.trade;
+    h+='<div>'+tradeText(t)+'</div>';
+    if(isMe(t.to))h+='<div class="acts"><button onclick="A(\'accept\')">মেনে নিন</button><button class="warn" onclick="A(\'decline\')">ফিরিয়ে দিন</button></div>';
+    else if(isMe(t.from))h+='<div class="acts"><button class="warn" onclick="A(\'decline\')">প্রস্তাব বাতিল</button></div>';
+  }
+  if(mine&&(s.phase==='roll'||s.phase==='post'))h+='<div class="acts"><button class="alt sm" onclick="G.tradeOpen()">🤝 বিনিময়/বেচাকেনা</button><button class="warn sm" onclick="G.retire()">খেলা ছাড়ুন</button></div>';
+  return h+'</div>';
+}
+function tradeText(t){
+  var f=S.players[t.from],o=S.players[t.to];
+  function list(c,ps){var a=[];if(c)a.push(money(c));ps.forEach(function(i){a.push(SQ[i].n);});return a.length?a.join(', '):'কিছু না';}
+  return '<b>'+esc(f.name)+'</b> দেবে: '+esc(list(t.oc,t.op))+'<br><b>'+esc(o.name)+'</b> দেবে: '+esc(list(t.rc,t.rp));
+}
+function propsCard(){
+  var v=viewer();if(v<0||S.players[v].out)return '';
+  var s=S,p=s.players[v],keys=Object.keys(s.own).map(Number).filter(function(k){return s.own[k].o===v;}).sort(function(a,b){return a-b;});
+  var can=isMe(s.cur)&&v===s.cur&&(s.phase==='roll'||s.phase==='post'||s.phase==='debt');
+  var h='<div class="card"><h3>'+(MODE==='local'?esc(p.name)+'-এর সম্পত্তি':'আপনার সম্পত্তি')+'</h3>';
+  if(!keys.length)return h+'<div class="mut">এখনও কিছু কেনেননি।</div></div>';
+  keys.forEach(function(k){
+    var q=SQ[k],o=s.own[k],col=q.t==='prop'?GROUPS[q.g][0]:(q.t==='station'?'#444':'#bbb');
+    var lv=q.t==='prop'?(o.lvl===5?'🏨':(o.lvl>0?'🏠×'+bn(o.lvl):'')):'';
+    h+='<div class="prow"><div class="l"><span class="sw" style="background:'+col+'"></span><span onclick="G.deed('+k+')" style="cursor:pointer">'+esc(q.n)+'</span> '+lv+(o.mort?' <span class="mut">(বন্ধক)</span>':'')+'</div>';
+    if(can){
+      h+='<div class="row" style="gap:3px;flex:none">';
+      if(q.t==='prop'&&s.phase!=='debt'&&hasMono(s,v,q.g)&&!o.mort)h+='<button class="sm alt" title="'+(o.lvl===4?'হোটেল':'বাড়ি')+' বানান ('+money(q.h)+')" onclick="A(\'build\',{idx:'+k+'})">+</button>';
+      if(q.t==='prop'&&o.lvl>0)h+='<button class="sm alt" title="অর্ধেক দামে বিক্রি" onclick="A(\'sell\',{idx:'+k+'})">−</button>';
+      if(!o.mort&&!(q.t==='prop'&&groupBuilt(s,q.g)))h+='<button class="sm alt" title="বন্ধক রেখে '+money(q.p/2)+' নিন" onclick="A(\'mortgage\',{idx:'+k+'})">বন্ধক</button>';
+      if(o.mort&&s.phase!=='debt')h+='<button class="sm alt" onclick="A(\'unmortgage\',{idx:'+k+'})">ছাড়ান '+money(Math.ceil(q.p/2*1.1))+'</button>';
+      h+='</div>';
+    }
+    h+='</div>';
+  });
+  return h+'</div>';
+}
+
+// ---------- মডাল ----------
+function closeModal(){modalEl.innerHTML='';tradeDraft=null;}
+function showDeed(i){
+  var q=SQ[i],o=S?S.own[i]:null,h='';
+  if(q.t==='prop'){
+    h='<div class="deed"><div class="hd" style="background:'+GROUPS[q.g][0]+'">'+esc(q.n)+'</div><div class="mut">'+GROUPS[q.g][1]+' গ্রুপ</div><table>'+
+    '<tr><td>ভাড়া</td><td>'+money(q.r[0])+'</td></tr><tr><td>পুরো গ্রুপ থাকলে (খালি)</td><td>'+money(q.r[0]*2)+'</td></tr>'+
+    [1,2,3,4].map(function(n){return '<tr><td>'+bn(n)+' বাড়ি</td><td>'+money(q.r[n])+'</td></tr>';}).join('')+
+    '<tr><td>হোটেল</td><td>'+money(q.r[5])+'</td></tr><tr><td>বাড়ি/হোটেল বানানোর খরচ</td><td>'+money(q.h)+'</td></tr><tr><td>বন্ধকি মূল্য</td><td>'+money(q.p/2)+'</td></tr><tr><td>দাম</td><td>'+money(q.p)+'</td></tr></table></div>';
+  }else if(q.t==='station'){
+    h='<div class="deed"><div class="hd" style="background:#ddd">🚂 '+esc(q.n)+'</div><table><tr><td>১টি স্টেশন থাকলে</td><td>'+money(25)+'</td></tr><tr><td>২টি</td><td>'+money(50)+'</td></tr><tr><td>৩টি</td><td>'+money(100)+'</td></tr><tr><td>৪টি</td><td>'+money(200)+'</td></tr><tr><td>বন্ধকি মূল্য</td><td>'+money(100)+'</td></tr><tr><td>দাম</td><td>'+money(200)+'</td></tr></table></div>';
+  }else if(q.t==='util'){
+    h='<div class="deed"><div class="hd" style="background:#ddd">'+esc(q.n)+'</div><table><tr><td>১টি ইউটিলিটি থাকলে</td><td>ছক্কার যোগফল ×৪</td></tr><tr><td>২টিই থাকলে</td><td>ছক্কার যোগফল ×১০</td></tr><tr><td>বন্ধকি মূল্য</td><td>'+money(75)+'</td></tr><tr><td>দাম</td><td>'+money(150)+'</td></tr></table></div>';
+  }else h='<div class="deed"><div class="hd" style="background:#eee">'+esc(q.n)+'</div></div>';
+  if(o&&S)h+='<p>মালিক: <b>'+esc(S.players[o.o].name)+'</b>'+(o.mort?' (বন্ধক)':'')+'</p>';
+  modalEl.innerHTML='<div class="modalbg" onclick="G.close()"><div class="modal" onclick="event.stopPropagation()">'+h+'<div class="acts"><button class="alt" onclick="G.close()">বন্ধ</button></div></div></div>';
+}
+function tradeOpen(){
+  var v=S.cur;var others=S.players.map(function(p,i){return i;}).filter(function(i){return i!==v&&!S.players[i].out;});
+  tradeDraft={to:others[0],oc:0,rc:0,op:[],rp:[]};renderTradeModal();
+}
+function tradable(who){return Object.keys(S.own).map(Number).filter(function(k){var o=S.own[k];return o.o===who&&!(SQ[k].t==='prop'&&groupBuilt(S,SQ[k].g));}).sort(function(a,b){return a-b;});}
+function renderTradeModal(){
+  var d=tradeDraft,v=S.cur;
+  var others=S.players.map(function(p,i){return i;}).filter(function(i){return i!==v&&!S.players[i].out;});
+  function plist(who,sel,key){var l=tradable(who);if(!l.length)return '<div class="mut">কোনো জায়গা নেই</div>';return l.map(function(k){return '<label><input type="checkbox" '+(sel.indexOf(k)>=0?'checked':'')+' onchange="G.tradeTog(\''+key+'\','+k+')"> <span class="sw" style="background:'+(SQ[k].t==='prop'?GROUPS[SQ[k].g][0]:'#999')+'"></span>'+esc(SQ[k].n)+(S.own[k].mort?' (বন্ধক)':'')+'</label>';}).join('');}
+  modalEl.innerHTML='<div class="modalbg"><div class="modal"><h3>🤝 বিনিময়ের প্রস্তাব</h3>'+
+  '<div class="row" style="margin:8px 0">কার সঙ্গে: <select onchange="G.tradeTo(this.value)">'+others.map(function(i){return '<option value="'+i+'" '+(i===d.to?'selected':'')+'>'+esc(S.players[i].name)+'</option>';}).join('')+'</select></div>'+
+  '<div class="cols"><div class="box"><b>আপনি দেবেন</b><div style="margin:6px 0">নগদ ৳ <input type="number" min="0" style="width:90px" value="'+d.oc+'" onchange="G.tradeCash(\'oc\',this.value)"></div>'+plist(v,d.op,'op')+'</div>'+
+  '<div class="box"><b>আপনি পাবেন</b><div style="margin:6px 0">নগদ ৳ <input type="number" min="0" style="width:90px" value="'+d.rc+'" onchange="G.tradeCash(\'rc\',this.value)"></div>'+plist(d.to,d.rp,'rp')+'</div></div>'+
+  '<p class="mut">বাড়ি/হোটেল থাকা গ্রুপের জায়গা বিনিময় করা যায় না।</p><div class="acts"><button onclick="G.tradeSend()">প্রস্তাব পাঠান</button><button class="alt" onclick="G.close()">বাতিল</button></div></div></div>';
+}
+
+// ---------- ইভেন্ট হ্যান্ডলার ----------
+window.G={
+  create:createRoom,
+  join:function(){joinRoom(document.getElementById('cd').value);},
+  rejoin:function(){joinRoom(lsGet('dk_code'));},
+  start:startOnline,leave:function(){if(MODE==='online'||S){if(!confirm||true){leaveRoom();}}},
+  locRender:function(){var n=+document.getElementById('lc').value,el=document.getElementById('locnames'),old=[].slice.call(el.querySelectorAll('input')).map(function(x){return x.value;});
+    var h='';for(var i=0;i<n;i++)h+='<input class="ln" placeholder="খেলোয়াড় '+bn(i+1)+'" value="'+esc(old[i]||'')+'" style="width:130px">';el.innerHTML=h;},
+  local:function(){var names=[].slice.call(document.querySelectorAll('.ln')).map(function(x,i){return x.value.trim()||('খেলোয়াড় '+bn(i+1));});startLocal(names);},
+  deed:showDeed,close:closeModal,
+  bidIn:function(v){bidVal=v;},
+  bidQuick:function(a){A('bid',{amt:a});},
+  bid:function(){var v=Number(document.getElementById('bid').value);if(!v){toast('ডাকের অঙ্ক লিখুন');return;}A('bid',{amt:v});},
+  retire:function(){if(window.confirm&&false){}A('retire');},
+  kick:function(i){A('kick',{i:i});},
+  tradeOpen:tradeOpen,
+  tradeTo:function(v){tradeDraft.to=+v;tradeDraft.rp=[];tradeDraft.rc=0;renderTradeModal();},
+  tradeCash:function(k,v){tradeDraft[k]=Math.max(0,Math.floor(+v||0));},
+  tradeTog:function(key,k){var l=tradeDraft[key],j=l.indexOf(k);if(j>=0)l.splice(j,1);else l.push(k);},
+  tradeSend:function(){var d=tradeDraft;var a={type:'propose',to:d.to,oc:d.oc,rc:d.rc,op:d.op,rp:d.rp};var r=apply(S,whoFor(S,a)===undefined?S.cur:(MODE==='local'?S.cur:myIdx()),a);if(r.err){toast(r.err);return;}closeModal();S=r.s;render();push();}
+};
+render();
+initNet();
+})();
+</script>
+</body>
+</html>
